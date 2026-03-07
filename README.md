@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# C-Studio Web
+
+An advanced, entirely client-side web application for writing, compiling, executing C code, and translating between C and the USDB Algorithmic Language.
+
+## Features
+
+- **In-Browser C Compilation:** Uses [Emception](https://github.com/jprendes/emception) (Clang compiled to WebAssembly) to parse and compile C programs directly in the browser—meaning zero server costs for code execution and total sandbox security.
+- **USDB Algo Translation:** Built-in lexer and parser for the USDB Algorithmic language, capable of converting C to Algo and Algo to C.
+- **Virtual File System:** A React-managed virtual file system mimicking desktop IDE workflows (supports multi-file compilation, nesting, and split editor views).
+- **Interactive Pseudo-Terminal:** Powershell-like UI powered by Xterm.js acting as a pseudo-TTY for running GCC WebAssembly commands (`gcc`, `./executable`).
+- **No Backend Required:** Ready for simple static site generation and CDN hosting on Vercel.
+
+## Architecture
+
+The application is built on Next.js 15+ (App Router) and React 19.
+
+### Key Directories
+- `src/app`: Reusable layout component, global generic CSS, and application entrypoints.
+- `src/components`: UI components including the Monaco Editor, Resizable Sidebar, XtermTerminal, and Editor Tabs.
+- `src/hooks`: Advanced state management extracted from the main page to keep components clean, including `useCompiler`, `useFileSystem`, `useTranslator`, and `useEditorState`.
+- `src/usdb-compiler`: AST structure, parsers, and bidirectional translators for turning raw string C/Algo into functional representations.
+- `public/emception`: The WebAssembly payload that Clang uses for client-side C processing. This directory is served statically with COOP/COEP headers enforced in `next.config.ts`.
 
 ## Getting Started
 
 First, run the development server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the IDE.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This app is optimized for Vercel. The `next.config.ts` automatically configures the correct cross-origin headers (`Cross-Origin-Opener-Policy`, `Cross-Origin-Embedder-Policy`) required for WebAssembly's `SharedArrayBuffer` threading to work efficiently.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deploying to Vercel is as simple as hooking up the repository and letting it build via the standard Next.js preset.
