@@ -248,8 +248,11 @@ export function useCompiler({
                   printErr: (text: string) => { runErr += text + "\\n"; },
                   stdin: () => {
                       if (inputBuffer.length === 0) {
-                          const result = window.prompt("Terminal Input requested by C Program:");
-                          if (result === null) return null; // EOF
+                          const result = window.prompt("The C Program is requesting input (e.g., scanf).\\n\\nPlease enter the required value:");
+                          if (result === null) {
+                              addTerminalLog("error", "[Input stream closed / EOF]");
+                              return null; // EOF
+                          }
                           inputBuffer = result.split('').map((c: string) => c.charCodeAt(0));
                           inputBuffer.push(10); // newline
                       }

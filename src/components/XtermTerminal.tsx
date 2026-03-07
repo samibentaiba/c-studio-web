@@ -9,9 +9,10 @@ interface XtermTerminalProps {
   workspacePath?: string | null;
   terminalLogs?: LogMessage[];
   onCommand?: (command: string) => void;
+  readOnly?: boolean;
 }
 
-export function XtermTerminal({ workspacePath, terminalLogs, onCommand }: XtermTerminalProps) {
+export function XtermTerminal({ workspacePath, terminalLogs, onCommand, readOnly }: XtermTerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -88,6 +89,7 @@ export function XtermTerminal({ workspacePath, terminalLogs, onCommand }: XtermT
       writePrompt();
 
       xterm.onData((data: string) => {
+        if (readOnly) return; // Disable typing when explicitly set to readonly
         if (data === "\r") {
           xterm.writeln("");
           if (currentLine.trim()) {
@@ -127,7 +129,7 @@ export function XtermTerminal({ workspacePath, terminalLogs, onCommand }: XtermT
         xtermRef.current = null;
       }
     };
-  }, [workspacePath]);
+  }, [workspacePath, readOnly]);
 
   useEffect(() => {
     if (!isReady) return;

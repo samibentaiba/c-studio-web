@@ -907,11 +907,16 @@ END.`,
   };
 
   const handleTerminalCommand = (command: string) => {
-    if (command.startsWith("gcc") || command.startsWith("g++")) {
+    const trimmed = command.trim();
+    if (trimmed.startsWith("gcc") || trimmed.startsWith("g++")) {
        handleRun();
-    } else if (command.startsWith("./") || command.startsWith(".\\")) {
+    } else if (trimmed.startsWith("./") || trimmed.startsWith(".\\")) {
        // Since web gcc compile+runs simultaneously or we only have single state, just re-run
        handleRun();
+    } else if (["ls", "dir"].includes(trimmed)) {
+       addTerminalLog("info", files.map(f => f.name).join("  "));
+    } else if (trimmed.startsWith("cd") || trimmed.startsWith("pwd")) {
+       addTerminalLog("info", "/working");
     } else {
        addTerminalLog("error", `Error: Command '${command}' not recognized in Web virtual terminal.`);
     }
@@ -1192,7 +1197,7 @@ END.`,
                       showOutputTab={showOutputTab}
                     />
                     <div className="flex-1">
-                      <XtermTerminal workspacePath={terminalWorkspacePath} terminalLogs={terminalLogs} onCommand={handleTerminalCommand} />
+                      <XtermTerminal workspacePath={terminalWorkspacePath} terminalLogs={terminalLogs} onCommand={handleTerminalCommand} readOnly={isCompiling} />
                     </div>
                   </div>
                 ) : activeFile ? (
