@@ -36,6 +36,9 @@ export const metadata: Metadata = {
     description: "Compile and debug C natively in your browser. Seamlessly translate USDB algorithms.",
     images: ["/og-image.png"],
   },
+  icons: {
+    icon: "/logo.png"
+  }
 };
 
 export default function RootLayout({
