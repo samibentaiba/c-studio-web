@@ -54,21 +54,116 @@ export function useCompiler({
              return;
          }
       } else {
-         // Gather all .c and .h files in the workspace
-         const collectFiles = (items: FileSystemItem[], prefix = "") => {
+         // Create a flat map of the virtual file system for quick path lookups
+         const fileMap = new Map<string, string>();
+         const buildFileMap = (items: FileSystemItem[], currentPath = "") => {
            for (const item of items) {
-             if (item.type === "file" && item.content) {
-               if (item.name.endsWith('.c') || item.name.endsWith('.h')) {
-                 const path = prefix ? `${prefix}/${item.name}` : item.name;
-                 payloadFiles.push({ name: path, content: item.content });
-               }
+             const itemPath = currentPath ? `${currentPath}/${item.name}` : item.name;
+             if (item.type === "file" && item.content !== undefined) {
+               fileMap.set(itemPath, item.content);
              } else if (item.type === "folder" && item.children) {
-               collectFiles(item.children, prefix ? `${prefix}/${item.name}` : item.name);
+               buildFileMap(item.children, itemPath);
              }
            }
          };
-         collectFiles(files);
+         buildFileMap(files);
+
+         // Find the active file's path in our map to resolve relative paths
+         let activeFilePath = activeFile.name;
+         for (const [path, content] of fileMap.entries()) {
+             if (content === activeFile.content && path.endsWith(activeFile.name)) {
+                 activeFilePath = path;
+                 break;
+             }
+         }
+
+         const activeFileDir = activeFilePath.includes('/') 
+            ? activeFilePath.substring(0, activeFilePath.lastIndexOf('/')) 
+            : "";
+
+         const visited = new Set<string>();
+         const cFilesToCompile = new Set<string>();
          
+         // Helper to safely resolve paths (handles "folder/file.h" and "../file.h")
+         const resolvePath = (baseDir: string, relativePath: string) => {
+             if (!relativePath.startsWith('.')) {
+                 // For #include "math.h" -> if baseDir is "src", check "src/math.h". If not found, check root "math.h".
+                 const localPath = baseDir ? `${baseDir}/${relativePath}` : relativePath;
+                 if (fileMap.has(localPath)) return localPath;
+                 return relativePath; 
+             }
+             
+             const baseParts = baseDir ? baseDir.split('/') : [];
+             const relParts = relativePath.split('/');
+             
+             for (const part of relParts) {
+                 if (part === '.') continue;
+                 if (part === '..') {
+                     if (baseParts.length > 0) baseParts.pop();
+                 } else {
+                     baseParts.push(part);
+                 }
+             }
+             return baseParts.join('/');
+         };
+
+         // Parse file for #include "..." statements and add it and dependencies
+         const resolveDependencies = (filePath: string) => {
+             if (visited.has(filePath)) return;
+             visited.add(filePath);
+             
+             const content = fileMap.get(filePath);
+             if (content === undefined) {
+                 addTerminalLog("warning", `Included file not found in workspace: ${filePath}`);
+                 return;
+             }
+             
+             payloadFiles.push({ name: filePath, content });
+             if (filePath.endsWith('.c') || filePath.endsWith('.cpp')) {
+                 cFilesToCompile.add(filePath);
+             }
+             
+             // Extract all #include "..." occurrences (handle both single and double quotes conceptually, though C is double)
+             const includeRegex = /#include\s+["<]([^">]+)[">]/g;
+             let match;
+             const fileDir = filePath.includes('/') ? filePath.substring(0, filePath.lastIndexOf('/')) : "";
+             
+             while ((match = includeRegex.exec(content)) !== null) {
+                 const headerPathRel = match[1];
+                 const fullHeaderPath = resolvePath(fileDir, headerPathRel);
+                 
+                 // Process the header file if we have it in our virtual workspace (ignore stdlib headers)
+                 if (fileMap.has(fullHeaderPath)) {
+                     resolveDependencies(fullHeaderPath);
+                     
+                     // If there's a corresponding .c file for the header, we must find it and include it.
+                     // The .c file might be anywhere, but it likely includes this exactly same header.
+                     if (fullHeaderPath.endsWith('.h') || fullHeaderPath.endsWith('.hpp')) {
+                         for (const [p, c] of fileMap.entries()) {
+                             // Look for .c files we haven't compiled yet
+                             if ((p.endsWith('.c') || p.endsWith('.cpp')) && !cFilesToCompile.has(p)) {
+                                 // Check if this .c file includes the header we are tracking
+                                 const cRegex = /#include\s+["<]([^">]+)[">]/g;
+                                 let cMatch;
+                                 const cDir = p.includes('/') ? p.substring(0, p.lastIndexOf('/')) : '';
+                                 
+                                 while ((cMatch = cRegex.exec(c)) !== null) {
+                                     const incFromC = resolvePath(cDir, cMatch[1]);
+                                     if (incFromC === fullHeaderPath) {
+                                         // Found the C implementation for this header!
+                                         resolveDependencies(p);
+                                     }
+                                 }
+                             }
+                         }
+                     }
+                 }
+             }
+         };
+
+         // Start dependency resolution from the entry point
+         resolveDependencies(activeFilePath);
+
          if (payloadFiles.length === 0) {
              payloadFiles = [{ name: activeFile.name, content: codeToRun }];
          }
