@@ -1,7 +1,14 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useTheme, appThemes } from "../ThemeContext";
-import { Palette, Terminal, GitBranch, Check, AlertTriangle, Loader2 } from "lucide-react";
+import {
+  Palette,
+  Terminal,
+  GitBranch,
+  Check,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 
 interface MenuItem {
   label?: string;
@@ -45,8 +52,14 @@ function DropdownMenu({ label, items }: MenuProps) {
           color: theme.ui.foreground,
           backgroundColor: isOpen ? theme.ui.backgroundLight : "transparent",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.ui.backgroundLight)}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isOpen ? theme.ui.backgroundLight : "transparent")}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.backgroundColor = theme.ui.backgroundLight)
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.backgroundColor = isOpen
+            ? theme.ui.backgroundLight
+            : "transparent")
+        }
         onClick={() => setIsOpen(!isOpen)}
         data-testid={testId}
       >
@@ -62,28 +75,39 @@ function DropdownMenu({ label, items }: MenuProps) {
         >
           {items.map((item, index) =>
             item.divider ? (
-              <div key={index} style={{ borderTop: `1px solid ${theme.ui.border}` }} className="my-1" />
+              <div
+                key={index}
+                style={{ borderTop: `1px solid ${theme.ui.border}` }}
+                className="my-1"
+              />
             ) : (
               <div
                 key={index}
                 className="px-3 py-1.5 text-xs cursor-pointer flex justify-between items-center transition-colors"
                 style={{ color: theme.ui.foreground }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.ui.accent)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = theme.ui.accent)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
                 onClick={() => {
                   item.action?.();
                   setIsOpen(false);
                 }}
-                data-testid={`${testId}-item-${item.label?.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                data-testid={`${testId}-item-${item.label?.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
               >
                 <span>{item.label}</span>
                 {item.shortcut && (
-                  <span className="text-[10px] ml-4" style={{ color: theme.ui.foregroundMuted }}>
+                  <span
+                    className="text-[10px] ml-4"
+                    style={{ color: theme.ui.foregroundMuted }}
+                  >
                     {item.shortcut}
                   </span>
                 )}
               </div>
-            )
+            ),
           )}
         </div>
       )}
@@ -121,8 +145,14 @@ function ThemeSelector() {
           color: theme.ui.foreground,
           backgroundColor: isOpen ? theme.ui.backgroundLight : "transparent",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.ui.backgroundLight)}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isOpen ? theme.ui.backgroundLight : "transparent")}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.backgroundColor = theme.ui.backgroundLight)
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.backgroundColor = isOpen
+            ? theme.ui.backgroundLight
+            : "transparent")
+        }
         onClick={() => setIsOpen(!isOpen)}
       >
         <Palette size={12} />
@@ -142,10 +172,16 @@ function ThemeSelector() {
               className="px-3 py-1.5 text-xs cursor-pointer flex items-center gap-2 transition-colors"
               style={{
                 color: theme.ui.foreground,
-                backgroundColor: themeId === t.id ? theme.ui.accent : "transparent",
+                backgroundColor:
+                  themeId === t.id ? theme.ui.accent : "transparent",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.ui.accent)}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = themeId === t.id ? theme.ui.accent : "transparent")}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = theme.ui.accent)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor =
+                  themeId === t.id ? theme.ui.accent : "transparent")
+              }
               onClick={() => {
                 setTheme(t.id);
                 setIsOpen(false);
@@ -167,7 +203,7 @@ function ThemeSelector() {
   );
 }
 
-export type FlowchartStatus = 'ok' | 'error' | 'loading' | 'hidden';
+export type FlowchartStatus = "ok" | "error" | "loading" | "hidden";
 
 interface TitleBarProps {
   onNewFile?: () => void;
@@ -193,7 +229,7 @@ export function TitleBar({
   onOpenTerminal,
   onToggleFlowchart,
   isFlowchartVisible = false,
-  flowchartStatus = 'hidden',
+  flowchartStatus = "hidden",
   flowchartError,
 }: TitleBarProps) {
   const { theme } = useTheme();
@@ -206,8 +242,16 @@ export function TitleBar({
     { divider: true },
     { label: "Save", action: onSaveFile, shortcut: "Ctrl+S" },
     { divider: true },
-    { label: "Export Workspace...", action: onExportWorkspace, shortcut: "Ctrl+E" },
-    { label: "Import Workspace...", action: onImportWorkspace, shortcut: "Ctrl+I" },
+    {
+      label: "Export Workspace...",
+      action: onExportWorkspace,
+      shortcut: "Ctrl+E",
+    },
+    {
+      label: "Import Workspace...",
+      action: onImportWorkspace,
+      shortcut: "Ctrl+I",
+    },
   ];
 
   const editMenuItems: MenuItem[] = [
@@ -231,7 +275,7 @@ export function TitleBar({
 
   return (
     <div
-      className="h-8 flex items-center px-2 select-none w-full draggable"
+      className="h-8 flex flex-shrink-0 items-center px-2 select-none w-full overflow-x-auto overflow-y-hidden whitespace-nowrap scrollbar-hide"
       style={{
         backgroundColor: theme.ui.backgroundDark,
         borderBottom: `1px solid ${theme.ui.border}`,
@@ -251,19 +295,30 @@ export function TitleBar({
         <DropdownMenu label="View" items={viewMenuItems} />
         <DropdownMenu label="Help" items={helpMenuItems} />
       </div>
-      <div className="flex-1 text-center text-xs font-medium" style={{ color: theme.ui.foregroundMuted }}>
+      <div
+        className="flex-1 hidden md:block text-center text-xs font-medium"
+        style={{ color: theme.ui.foregroundMuted }}
+      >
         C-Studio - v1.5.0
       </div>
-      <div className="flex items-center gap-2 mr-2">
+      <div className="flex items-center gap-2 mr-2 ml-auto">
         {/* Flowchart Toggle Button */}
         <div
           className="px-2 py-1 text-xs cursor-pointer transition-colors rounded flex items-center gap-1"
-          style={{ 
+          style={{
             color: isFlowchartVisible ? theme.ui.accent : theme.ui.foreground,
-            backgroundColor: isFlowchartVisible ? theme.ui.backgroundLight : "transparent",
+            backgroundColor: isFlowchartVisible
+              ? theme.ui.backgroundLight
+              : "transparent",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.ui.backgroundLight)}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isFlowchartVisible ? theme.ui.backgroundLight : "transparent")}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.backgroundColor = theme.ui.backgroundLight)
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.backgroundColor = isFlowchartVisible
+              ? theme.ui.backgroundLight
+              : "transparent")
+          }
           onClick={onToggleFlowchart}
           title={"Afficher/Masquer l'organigramme (Ctrl+Shift+F)"}
           data-testid="btn-flowchart-toggle"
@@ -271,15 +326,15 @@ export function TitleBar({
           <GitBranch size={12} />
           Organigramme
           {/* Status indicator */}
-          {isFlowchartVisible && flowchartStatus !== 'hidden' && (
-            <span className="ml-1" title={flowchartError || ''}>
-              {flowchartStatus === 'ok' && (
+          {isFlowchartVisible && flowchartStatus !== "hidden" && (
+            <span className="ml-1" title={flowchartError || ""}>
+              {flowchartStatus === "ok" && (
                 <Check size={10} className="text-green-500" />
               )}
-              {flowchartStatus === 'error' && (
+              {flowchartStatus === "error" && (
                 <AlertTriangle size={10} className="text-yellow-500" />
               )}
-              {flowchartStatus === 'loading' && (
+              {flowchartStatus === "loading" && (
                 <Loader2 size={10} className="animate-spin text-blue-400" />
               )}
             </span>
@@ -289,8 +344,12 @@ export function TitleBar({
         <div
           className="px-2 py-1 text-xs cursor-pointer transition-colors rounded flex items-center gap-1"
           style={{ color: theme.ui.foreground }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.ui.backgroundLight)}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.backgroundColor = theme.ui.backgroundLight)
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.backgroundColor = "transparent")
+          }
           onClick={onOpenTerminal}
           title="Terminal (Ctrl+`)"
           data-testid="btn-terminal"

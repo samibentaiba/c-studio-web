@@ -1,4 +1,12 @@
 import type { NextConfig } from "next";
+import withPWAInit from "next-pwa";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  // We don't strictly need workbox to generate everything if we wrote sw.js but next-pwa helps inject it
+  swSrc: "public/sw.js",
+});
 
 const nextConfig: NextConfig = {
   async headers() {
@@ -31,7 +39,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-         // In Next.js App Router, COOP/COEP might be required for SharedArrayBuffer (which wasm multithreading uses)
+        // In Next.js App Router, COOP/COEP might be required for SharedArrayBuffer (which wasm multithreading uses)
         source: "/emception/(.*)",
         headers: [
           {
@@ -43,9 +51,9 @@ const nextConfig: NextConfig = {
             value: "require-corp",
           },
         ],
-      }
+      },
     ];
   },
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);

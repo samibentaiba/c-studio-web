@@ -2,13 +2,22 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import dynamic from "next/dynamic";
-const MonacoEditor = dynamic(() => import("@/components/MonacoEditor").then(mod => mod.MonacoEditor), { ssr: false });
+const MonacoEditor = dynamic(
+  () => import("@/components/MonacoEditor").then((mod) => mod.MonacoEditor),
+  { ssr: false },
+);
 import { TerminalPanel } from "@/components/TerminalPanel";
-const XtermTerminal = dynamic(() => import("@/components/XtermTerminal").then(mod => mod.XtermTerminal), { ssr: false });
+const XtermTerminal = dynamic(
+  () => import("@/components/XtermTerminal").then((mod) => mod.XtermTerminal),
+  { ssr: false },
+);
 import { EditorTabs } from "@/components/EditorTabs";
 import { TitleBar, FlowchartStatus } from "@/components/TitleBar";
 import { UpdateNotification } from "@/components/UpdateNotification";
-const FlowchartPanel = dynamic(() => import("@/components/FlowchartPanel").then(mod => mod.FlowchartPanel), { ssr: false });
+const FlowchartPanel = dynamic(
+  () => import("@/components/FlowchartPanel").then((mod) => mod.FlowchartPanel),
+  { ssr: false },
+);
 import { ThemeProvider } from "@/ThemeContext";
 import { FileSystemItem, LogMessage, LogType } from "@/types";
 import { useShortcut, ShortcutProvider } from "@/ShortcutContext";
@@ -107,7 +116,14 @@ import { useCompiler } from "@/hooks/useCompiler";
 import { useTranslator } from "@/hooks/useTranslator";
 
 function CCodeStudioInner() {
-  const { logs, setLogs, terminalLogs, setTerminalLogs, addLog, addTerminalLog } = useLogs();
+  const {
+    logs,
+    setLogs,
+    terminalLogs,
+    setTerminalLogs,
+    addLog,
+    addTerminalLog,
+  } = useLogs();
 
   const [activeFileId, setActiveFileId] = useState<string | null>("1");
   const {
@@ -229,9 +245,10 @@ function CCodeStudioInner() {
   });
 
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
-  const [flowchartStatus, setFlowchartStatus] = useState<FlowchartStatus>('ok');
-  const [flowchartError, setFlowchartError] = useState<string | undefined>(undefined);
-
+  const [flowchartStatus, setFlowchartStatus] = useState<FlowchartStatus>("ok");
+  const [flowchartError, setFlowchartError] = useState<string | undefined>(
+    undefined,
+  );
 
   const handleGenerateTest = (
     type:
@@ -245,7 +262,7 @@ function CCodeStudioInner() {
       | "algo-array-sum"
       | "algo-quadratic"
       | "algo-struct"
-      | "algo-loops"
+      | "algo-loops",
   ) => {
     const newId = () => Math.random().toString(36).substr(2, 9);
     const rootId = newId();
@@ -846,7 +863,7 @@ END.`,
       return;
     }
 
-    // Default fallback since `newFolder` type was separated into block scopes 
+    // Default fallback since `newFolder` type was separated into block scopes
     const defaultFolder: FileSystemItem = {
       id: rootId,
       name: "New_Test",
@@ -856,7 +873,6 @@ END.`,
     };
     setFiles([...files, newFolder || defaultFolder]);
   };
-
 
   const [markers, setMarkers] = useState<
     {
@@ -876,15 +892,15 @@ END.`,
   useEffect(() => {
     // Listen for process output (Web proxy: no-op since Xterm handles socket streams separately or not at all depending on impl)
     if (typeof window !== "undefined" && (window as any).electron) {
-       (window as any).electron.onProcessOutput((data: string) => {
-         addLog("info", data);
-       });
+      (window as any).electron.onProcessOutput((data: string) => {
+        addLog("info", data);
+      });
     }
 
     if (typeof window !== "undefined" && (window as any).electron) {
-       (window as any).electron.onProcessExit((code: number) => {
-         addLog("info", `\\nProcess exited with code ${code}`);
-       });
+      (window as any).electron.onProcessExit((code: number) => {
+        addLog("info", `\\nProcess exited with code ${code}`);
+      });
     }
 
     return () => {};
@@ -895,33 +911,29 @@ END.`,
     // Disabled for web
   }, []);
 
-
-
-
-
-
-
   const handleTerminalInput = (input: string) => {
-    // In Web, Terminal is mostly mock/read-only unless bridged to an API shell 
+    // In Web, Terminal is mostly mock/read-only unless bridged to an API shell
     addLog("info", input + "\n");
   };
 
   const handleTerminalCommand = (command: string) => {
     const trimmed = command.trim();
     if (trimmed.startsWith("gcc") || trimmed.startsWith("g++")) {
-       handleRun();
+      handleRun();
     } else if (trimmed.startsWith("./") || trimmed.startsWith(".\\")) {
-       // Since web gcc compile+runs simultaneously or we only have single state, just re-run
-       handleRun();
+      // Since web gcc compile+runs simultaneously or we only have single state, just re-run
+      handleRun();
     } else if (["ls", "dir"].includes(trimmed)) {
-       addTerminalLog("info", files.map(f => f.name).join("  "));
+      addTerminalLog("info", files.map((f) => f.name).join("  "));
     } else if (trimmed.startsWith("cd") || trimmed.startsWith("pwd")) {
-       addTerminalLog("info", "/working");
+      addTerminalLog("info", "/working");
     } else {
-       addTerminalLog("error", `Error: Command '${command}' not recognized in Web virtual terminal.`);
+      addTerminalLog(
+        "error",
+        `Error: Command '${command}' not recognized in Web virtual terminal.`,
+      );
     }
   };
-
 
   // ===== File System Handlers =====
 
@@ -934,7 +946,7 @@ END.`,
 
   const handleOpenFile = useCallback(() => {
     if (typeof window === "undefined") return;
-    
+
     // Web implementation: Use a hidden file input
     const input = document.createElement("input");
     input.type = "file";
@@ -961,7 +973,10 @@ END.`,
   }, [addLog]);
 
   const handleOpenFolder = useCallback(() => {
-    addLog("warning", "Folder opening is limited in Web mode. Please open files individually or use workspace export/import.");
+    addLog(
+      "warning",
+      "Folder opening is limited in Web mode. Please open files individually or use workspace export/import.",
+    );
   }, [addLog]);
 
   const handleSave = useCallback(() => {
@@ -982,7 +997,7 @@ END.`,
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
     addLog("success", `Downloaded: ${activeFile.name}`);
   }, [activeFile, addLog]);
 
@@ -995,7 +1010,9 @@ END.`,
       files: files,
     };
 
-    const blob = new Blob([JSON.stringify(workspace, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(workspace, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1023,11 +1040,14 @@ END.`,
         try {
           const workspace = JSON.parse(content);
           if (workspace.files && Array.isArray(workspace.files)) {
-             setFiles(workspace.files);
-             setActiveFileId(null);
-             addLog("success", `Workspace imported: ${workspace.name || "Unnamed"}`);
+            setFiles(workspace.files);
+            setActiveFileId(null);
+            addLog(
+              "success",
+              `Workspace imported: ${workspace.name || "Unnamed"}`,
+            );
           } else {
-             addLog("error", "Invalid workspace file format");
+            addLog("error", "Invalid workspace file format");
           }
         } catch {
           addLog("error", "Failed to parse workspace file");
@@ -1037,7 +1057,7 @@ END.`,
     };
     input.click();
   }, [addLog]);
-  
+
   const handleCloseActiveTab = useCallback(() => {
     if (activeFileId) {
       handleTabClose(activeFileId);
@@ -1049,28 +1069,76 @@ END.`,
 
   useEffect(() => {
     const unsubs = [
-      registerShortcut("Ctrl+n", (e) => { e.preventDefault(); handleNewFile(); }),
-      registerShortcut("Ctrl+o", (e) => { e.preventDefault(); handleOpenFile(); }),
-      registerShortcut("Ctrl+Shift+o", (e) => { e.preventDefault(); handleOpenFolder(); }),
-      registerShortcut("Ctrl+s", (e) => { e.preventDefault(); handleSave(); }),
-      registerShortcut("Ctrl+e", (e) => { e.preventDefault(); handleExportWorkspace(); }),
-      registerShortcut("Ctrl+i", (e) => { e.preventDefault(); handleImportWorkspace(); }),
-      registerShortcut("Ctrl+`", (e) => { e.preventDefault(); setIsTerminalCollapsed((prev) => !prev); }),
-      registerShortcut("Ctrl+b", (e) => { e.preventDefault(); setIsSidebarCollapsed((prev) => !prev); }),
-      registerShortcut("Ctrl+Shift+f", (e) => { e.preventDefault(); setIsFlowchartVisible((prev) => !prev); }),
-      registerShortcut("F5", (e) => { e.preventDefault(); handleRun(); }),
-      registerShortcut("Ctrl+t", (e) => { e.preventDefault(); handleTranslate(); }),
-      registerShortcut("Ctrl+w", (e) => { e.preventDefault(); handleCloseActiveTab(); }),
+      registerShortcut("Ctrl+n", (e) => {
+        e.preventDefault();
+        handleNewFile();
+      }),
+      registerShortcut("Ctrl+o", (e) => {
+        e.preventDefault();
+        handleOpenFile();
+      }),
+      registerShortcut("Ctrl+Shift+o", (e) => {
+        e.preventDefault();
+        handleOpenFolder();
+      }),
+      registerShortcut("Ctrl+s", (e) => {
+        e.preventDefault();
+        handleSave();
+      }),
+      registerShortcut("Ctrl+e", (e) => {
+        e.preventDefault();
+        handleExportWorkspace();
+      }),
+      registerShortcut("Ctrl+i", (e) => {
+        e.preventDefault();
+        handleImportWorkspace();
+      }),
+      registerShortcut("Ctrl+`", (e) => {
+        e.preventDefault();
+        setIsTerminalCollapsed((prev) => !prev);
+      }),
+      registerShortcut("Ctrl+b", (e) => {
+        e.preventDefault();
+        setIsSidebarCollapsed((prev) => !prev);
+      }),
+      registerShortcut("Ctrl+Shift+f", (e) => {
+        e.preventDefault();
+        setIsFlowchartVisible((prev) => !prev);
+      }),
+      registerShortcut("F5", (e) => {
+        e.preventDefault();
+        handleRun();
+      }),
+      registerShortcut("Ctrl+t", (e) => {
+        e.preventDefault();
+        handleTranslate();
+      }),
+      registerShortcut("Ctrl+w", (e) => {
+        e.preventDefault();
+        handleCloseActiveTab();
+      }),
     ];
-    return () => unsubs.forEach(u => u());
-  }, [handleNewFile, handleOpenFile, handleOpenFolder, handleSave, handleExportWorkspace, handleImportWorkspace, handleRun, handleTranslate, handleCloseActiveTab]);
+    return () => unsubs.forEach((u) => u());
+  }, [
+    handleNewFile,
+    handleOpenFile,
+    handleOpenFolder,
+    handleSave,
+    handleExportWorkspace,
+    handleImportWorkspace,
+    handleRun,
+    handleTranslate,
+    handleCloseActiveTab,
+  ]);
 
-  const [terminalWorkspacePath, setTerminalWorkspacePath] = useState<string | null>(null);
+  const [terminalWorkspacePath, setTerminalWorkspacePath] = useState<
+    string | null
+  >(null);
 
   const handleOpenTerminal = async () => {
     // Workspaces saving in web isn't an explicit folder for Xterm, so we just set dummy.
     setTerminalWorkspacePath("Virtual Web Workspace");
-    
+
     setShowTerminalTab(true);
     if (!openTabs.includes("terminal")) {
       setOpenTabs((prev) => [...prev, "terminal"]);
@@ -1100,11 +1168,11 @@ END.`,
           flowchartStatus={flowchartStatus}
           flowchartError={flowchartError}
         />
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden relative">
           {/* Sidebar collapse toggle */}
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="h-full w-8 flex items-center justify-center hover:bg-white/5 transition-colors flex-shrink-0"
+            className="h-full w-8 flex flex-col pt-2 items-center hover:bg-white/5 transition-colors flex-shrink-0 z-30 relative"
             style={{
               backgroundColor: "var(--theme-bg)",
               borderRight: "1px solid var(--theme-border)",
@@ -1133,8 +1201,14 @@ END.`,
 
           {/* Resizable Sidebar */}
           <div
-            className="flex-shrink-0 transition-all duration-200 overflow-hidden relative"
-            style={{ width: isSidebarCollapsed ? 0 : sidebarWidth }}
+            className={cn(
+              "flex-shrink-0 transition-all duration-200 overflow-hidden absolute md:relative z-20 h-full",
+              !isSidebarCollapsed && "shadow-2xl md:shadow-none",
+            )}
+            style={{
+              width: isSidebarCollapsed ? 0 : sidebarWidth,
+              left: isSidebarCollapsed ? 0 : "2rem", // offset by the toggle button width on mobile
+            }}
           >
             <div className="h-full" style={{ width: sidebarWidth - 4 }}>
               <Sidebar
@@ -1152,21 +1226,35 @@ END.`,
             {/* Resize handle */}
             {!isSidebarCollapsed && (
               <div
-                className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-blue-500/50 transition-colors"
+                className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-blue-500/50 transition-colors hidden md:block"
                 style={{ backgroundColor: "var(--theme-border)" }}
                 onMouseDown={handleSidebarResize}
               />
             )}
           </div>
 
+          {/* Mobile Overlay to dismiss sidebar */}
+          {!isSidebarCollapsed && (
+            <div
+              className="absolute inset-0 z-10 bg-black/50 md:hidden"
+              onClick={() => setIsSidebarCollapsed(true)}
+            />
+          )}
+
           {/* Main Editor and Split Editor */}
-          <div className="flex-1 flex min-w-0">
+          <div
+            className="flex-1 flex min-w-0 md:ml-0"
+            style={{ marginLeft: isSidebarCollapsed ? 0 : 0 }}
+          >
             {/* Primary Editor */}
             <div className="flex-1 flex flex-col min-w-0">
               <div className="flex-1 flex flex-col min-h-0">
                 {activeFileId === "output" ? (
                   /* Output Tab Content */
-                  <div className="h-full flex flex-col" style={{ backgroundColor: "var(--theme-bg-dark)" }}>
+                  <div
+                    className="h-full flex flex-col"
+                    style={{ backgroundColor: "var(--theme-bg-dark)" }}
+                  >
                     <EditorTabs
                       openTabs={openTabs}
                       activeFileId={activeFileId}
@@ -1186,7 +1274,10 @@ END.`,
                   </div>
                 ) : activeFileId === "terminal" ? (
                   /* Terminal Tab Content - Interactive PowerShell */
-                  <div className="h-full flex flex-col" style={{ backgroundColor: "var(--theme-bg-dark)" }}>
+                  <div
+                    className="h-full flex flex-col"
+                    style={{ backgroundColor: "var(--theme-bg-dark)" }}
+                  >
                     <EditorTabs
                       openTabs={openTabs}
                       activeFileId={activeFileId}
@@ -1197,7 +1288,12 @@ END.`,
                       showOutputTab={showOutputTab}
                     />
                     <div className="flex-1">
-                      <XtermTerminal workspacePath={terminalWorkspacePath} terminalLogs={terminalLogs} onCommand={handleTerminalCommand} readOnly={isCompiling} />
+                      <XtermTerminal
+                        workspacePath={terminalWorkspacePath}
+                        terminalLogs={terminalLogs}
+                        onCommand={handleTerminalCommand}
+                        readOnly={isCompiling}
+                      />
                     </div>
                   </div>
                 ) : activeFile ? (
@@ -1261,7 +1357,7 @@ END.`,
             {isFlowchartVisible && (
               <div
                 className="flex min-w-0 relative"
-                style={{ 
+                style={{
                   width: `${flowchartPanelWidth}px`,
                   minWidth: "250px",
                   maxWidth: "70%",
@@ -1270,58 +1366,69 @@ END.`,
                 {/* Resize Handle */}
                 <div
                   className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-blue-500/50 z-10"
-                  style={{ 
-                    backgroundColor: isResizingFlowchart ? 'rgba(59, 130, 246, 0.5)' : 'transparent',
+                  style={{
+                    backgroundColor: isResizingFlowchart
+                      ? "rgba(59, 130, 246, 0.5)"
+                      : "transparent",
                   }}
                   onMouseDown={(e) => {
                     e.preventDefault();
                     setIsResizingFlowchart(true);
                     const startX = e.clientX;
                     const startWidth = flowchartPanelWidth;
-                    
+
                     const handleMouseMove = (moveEvent: MouseEvent) => {
                       const delta = startX - moveEvent.clientX;
-                      const newWidth = Math.max(250, Math.min(window.innerWidth * 0.7, startWidth + delta));
+                      const newWidth = Math.max(
+                        250,
+                        Math.min(window.innerWidth * 0.7, startWidth + delta),
+                      );
                       setFlowchartPanelWidth(newWidth);
                     };
-                    
+
                     const handleMouseUp = () => {
                       setIsResizingFlowchart(false);
                       if (typeof window !== "undefined") {
-                        localStorage.setItem("c-studio-flowchart-width", flowchartPanelWidth.toString());
-                        document.removeEventListener('mousemove', handleMouseMove);
-                        document.removeEventListener('mouseup', handleMouseUp);
+                        localStorage.setItem(
+                          "c-studio-flowchart-width",
+                          flowchartPanelWidth.toString(),
+                        );
+                        document.removeEventListener(
+                          "mousemove",
+                          handleMouseMove,
+                        );
+                        document.removeEventListener("mouseup", handleMouseUp);
                       }
                     };
-                    
+
                     if (typeof window !== "undefined") {
-                      document.addEventListener('mousemove', handleMouseMove);
-                      document.addEventListener('mouseup', handleMouseUp);
+                      document.addEventListener("mousemove", handleMouseMove);
+                      document.addEventListener("mouseup", handleMouseUp);
                     }
                   }}
                 />
-                
+
                 {/* Panel Content */}
-                <div 
+                <div
                   className="flex-1 flex flex-col"
                   style={{ borderLeft: "1px solid var(--theme-border)" }}
                 >
                   <FlowchartPanel
                     source={activeFile?.content || ""}
-                    language={activeFile?.name.endsWith('.algo') ? 'algo' : 'c'}
+                    language={activeFile?.name.endsWith(".algo") ? "algo" : "c"}
                     onParseError={(error) => {
-                      setFlowchartStatus('error');
+                      setFlowchartStatus("error");
                       setFlowchartError(error);
                     }}
                     onParseSuccess={() => {
-                      setFlowchartStatus('ok');
+                      setFlowchartStatus("ok");
                       setFlowchartError(undefined);
                     }}
-                      onCodeChange={(newCode) => {
-                        if (activeFileId) {
-                          handleContentChange(newCode, activeFileId);
-                        }
-                      }}
+                    onCodeChange={(newCode) => {
+                      if (activeFileId) {
+                        handleContentChange(newCode, activeFileId);
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -1340,6 +1447,9 @@ END.`,
     </ThemeProvider>
   );
 }
+
+// Utility class import needs to be valid
+import { cn } from "@/lib/utils";
 
 export default function CCodeStudio() {
   return (
