@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 import { Sidebar } from "@/components/Sidebar";
 import dynamic from "next/dynamic";
 const MonacoEditor = dynamic(
@@ -1001,28 +1003,35 @@ END.`,
     addLog("success", `Downloaded: ${activeFile.name}`);
   }, [activeFile, addLog]);
 
-  const handleExportWorkspace = useCallback(() => {
+  const handleExportWorkspace = useCallback(async () => {
     if (typeof window === "undefined") return;
 
-    const workspace = {
-      version: "1.5.0",
-      name: "C-Studio Project",
-      files: files,
-    };
+    try {
+      const zip = new JSZip();
 
-    const blob = new Blob([JSON.stringify(workspace, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "project.cstudio";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const addToZip = (items: FileSystemItem[], currentFolder: JSZip) => {
+        items.forEach((item) => {
+          if (item.type === "file") {
+            currentFolder.file(item.name, item.content || "");
+          } else if (item.type === "folder" && item.children) {
+            const newFolder = currentFolder.folder(item.name);
+            if (newFolder) {
+              addToZip(item.children, newFolder);
+            }
+          }
+        });
+      };
 
-    addLog("success", `Workspace exported successfully`);
+      addToZip(files, zip);
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      saveAs(blob, "c-studio-workspace.zip");
+
+      addLog("success", `Workspace exported to ZIP successfully`);
+    } catch (error) {
+      console.error("Export failed", error);
+      addLog("error", "Failed to export workspace as ZIP");
+    }
   }, [files, addLog]);
 
   const handleImportWorkspace = useCallback(() => {
@@ -1172,7 +1181,7 @@ END.`,
           {/* Sidebar collapse toggle */}
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="h-full w-8 flex flex-col pt-2 items-center hover:bg-white/5 transition-colors flex-shrink-0 z-30 relative"
+            className="h-full w-8 flex flex-col pt-2 items-center hover:bg-white/5 transition-colors shrink-0 z-30 relative"
             style={{
               backgroundColor: "var(--theme-bg)",
               borderRight: "1px solid var(--theme-border)",
@@ -1202,7 +1211,7 @@ END.`,
           {/* Resizable Sidebar */}
           <div
             className={cn(
-              "flex-shrink-0 transition-all duration-200 overflow-hidden absolute md:relative z-20 h-full",
+              "shrink-0 transition-all duration-200 overflow-hidden absolute md:relative z-20 h-full",
               !isSidebarCollapsed && "shadow-2xl md:shadow-none",
             )}
             style={{

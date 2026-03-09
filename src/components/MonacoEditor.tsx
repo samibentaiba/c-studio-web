@@ -173,12 +173,9 @@ export function MonacoEditor({
 
       const initWasm = async () => {
         try {
-          // Web doesn't have local electron WASM injection.
-          // In an actual deployment we'd fetch this from a public URL or CDN. 
-          // Ignoring initialization if `window.electron` isn't available.
-          if (typeof window !== "undefined" && (window as any).electron) {
-             const wasmPath = await (window as any).electron.getClangFormatWasmPath();
-             await init(wasmPath);
+          // Initialize WASM via local public asset for offline support
+          if (typeof window !== "undefined") {
+            await init("/clang-format.wasm");
           }
         } catch (error) {
           console.error("Failed to initialize clang-format WASM:", error);
@@ -195,7 +192,7 @@ export function MonacoEditor({
               const formatted = await format(
                 text,
                 "main.c",
-                JSON.stringify({ BasedOnStyle: "Chromium", IndentWidth: 4 })
+                JSON.stringify({ BasedOnStyle: "Chromium", IndentWidth: 4 }),
               );
               return [
                 {
@@ -208,7 +205,7 @@ export function MonacoEditor({
               return [];
             }
           },
-        }
+        },
       );
 
       return () => dispose.dispose();

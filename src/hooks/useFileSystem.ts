@@ -1,11 +1,17 @@
-import { useState, useCallback } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import { FileSystemItem } from "@/types";
 
 interface UseFileSystemProps {
   initialFiles: FileSystemItem[];
   activeFileId: string | null;
-  setActiveFileId: React.Dispatch<React.SetStateAction<string | null>>;
-  setOpenTabs: React.Dispatch<React.SetStateAction<string[]>>;
+  setActiveFileId: Dispatch<SetStateAction<string | null>>;
+  setOpenTabs: Dispatch<SetStateAction<string[]>>;
   addLog: (type: any, content: string) => void;
 }
 
@@ -16,11 +22,30 @@ export function useFileSystem({
   setOpenTabs,
   addLog,
 }: UseFileSystemProps) {
-  const [files, setFiles] = useState<FileSystemItem[]>(initialFiles);
+  const [files, setFiles] = useState<FileSystemItem[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("cstudio-files");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to parse saved files", e);
+        }
+      }
+    }
+    return initialFiles;
+  });
+
+  // Auto-save whenever files change
+  useEffect(() => {
+    if (typeof window !== "undefined" && files !== initialFiles) {
+      localStorage.setItem("cstudio-files", JSON.stringify(files));
+    }
+  }, [files, initialFiles]);
 
   const findFile = (
     items: FileSystemItem[],
-    id: string
+    id: string,
   ): FileSystemItem | null => {
     for (const item of items) {
       if (item.id === id) return item;
@@ -45,11 +70,13 @@ export function useFileSystem({
         isOpen: true,
       };
 
-      setFiles((prev) => {
+      setFiles((prev: FileSystemItem[]) => {
         if (!parentId) {
           return [...prev, newItem];
         } else {
-          const updateChildren = (items: FileSystemItem[]): FileSystemItem[] => {
+          const updateChildren = (
+            items: FileSystemItem[],
+          ): FileSystemItem[] => {
             return items.map((item) => {
               if (item.id === parentId) {
                 return {
@@ -70,12 +97,12 @@ export function useFileSystem({
 
       if (type === "file") {
         setActiveFileId(newItem.id);
-        setOpenTabs((prev) =>
-          prev.includes(newItem.id) ? prev : [...prev, newItem.id]
+        setOpenTabs((prev: string[]) =>
+          prev.includes(newItem.id) ? prev : [...prev, newItem.id],
         );
       }
     },
-    [setActiveFileId, setOpenTabs]
+    [setActiveFileId, setOpenTabs],
   );
 
   const handleDelete = (id: string) => {
@@ -89,7 +116,9 @@ export function useFileSystem({
     };
     setFiles(deleteFromTree(files));
     if (activeFileId === id) setActiveFileId(null);
-    setOpenTabs((prev) => prev.filter((tabId) => tabId !== id));
+    setOpenTabs((prev: string[]) =>
+      prev.filter((tabId: string) => tabId !== id),
+    );
   };
 
   const handleRename = (id: string, newName: string) => {
@@ -116,7 +145,7 @@ export function useFileSystem({
     if (targetId) {
       const isDescendant = (
         parent: FileSystemItem,
-        target: string
+        target: string,
       ): boolean => {
         if (!parent.children) return false;
         for (const child of parent.children) {
