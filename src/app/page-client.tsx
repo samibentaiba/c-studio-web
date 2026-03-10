@@ -1213,10 +1213,10 @@ END.`,
             className={cn(
               "shrink-0 transition-all duration-200 overflow-hidden absolute md:relative z-20 h-full",
               !isSidebarCollapsed && "shadow-2xl md:shadow-none",
+              isSidebarCollapsed ? "left-0" : "left-8 md:left-auto"
             )}
             style={{
               width: isSidebarCollapsed ? 0 : sidebarWidth,
-              left: isSidebarCollapsed ? 0 : "2rem", // offset by the toggle button width on mobile
             }}
           >
             <div className="h-full" style={{ width: sidebarWidth - 4 }}>

@@ -50,6 +50,11 @@ export function useCompiler({
              addTerminalLog("info", "Successfully transpiled .algo to C before executing.");
          } else {
              addTerminalLog("error", "Failed to transpile Algo code. Cannot execute.");
+             if (transpile.errors && transpile.errors.length > 0) {
+                 for (const err of transpile.errors) {
+                     addTerminalLog("error", `[Transpiler Error] ${err.toString()}`);
+                 }
+             }
              setIsCompiling(false);
              return;
          }
