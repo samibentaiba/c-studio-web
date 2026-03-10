@@ -168,11 +168,21 @@ export function translateCToAlgo(
     if (inMain || inFunction) {
       const translated = translateStatement(line, typeMap, variables, warnings);
       if (translated) {
-        const sourceLine: SourceLine = { code: translated, cLine: i };
-        if (inMain) {
-          mainBody.push(sourceLine);
+        if (Array.isArray(translated)) {
+          for (const t of translated) {
+            if (inMain) {
+              mainBody.push({ code: t, cLine: i });
+            } else {
+              currentFunctionBody.push({ code: t, cLine: i });
+            }
+          }
         } else {
-          currentFunctionBody.push(sourceLine);
+          const sourceLine: SourceLine = { code: translated, cLine: i };
+          if (inMain) {
+            mainBody.push(sourceLine);
+          } else {
+            currentFunctionBody.push(sourceLine);
+          }
         }
       }
     } else {
@@ -247,13 +257,39 @@ export function translateCToAlgo(
   }
   linesAccumulator.push({ code: "END.", cLine: -1 });
 
-  // Generate final code and map
   let finalCode = "";
   const sourceMap: number[] = [];
-  
-  linesAccumulator.forEach((line, index) => {
-    finalCode += line.code + "\n";
+  let currentIndent = 0;
+  const indentStr = "    ";
+
+  linesAccumulator.forEach((line) => {
+    let rawCode = line.code.trim();
+    if (!rawCode) {
+      finalCode += "\n";
+      sourceMap.push(line.cLine);
+      return;
+    }
+
+    // Outdent triggers before printing line
+    const isEnd = rawCode === "END" || rawCode.startsWith("END.");
+    const isElse = rawCode === "ELSE" || rawCode.startsWith("ELSE IF");
+    const isUntil = rawCode.startsWith("UNTIL");
+    
+    if (isEnd || isElse || isUntil) {
+       currentIndent = Math.max(0, currentIndent - 1);
+    }
+    
+    // Apply indent
+    finalCode += indentStr.repeat(currentIndent) + rawCode + "\n";
     sourceMap.push(line.cLine);
+
+    // Indent triggers after printing line
+    const isBegin = rawCode === "BEGIN" || rawCode.startsWith("SWITCH ") && rawCode.endsWith(" BEGIN") || rawCode === "STRUCTURE" || rawCode.startsWith("TYPE") && !rawCode.includes("=");
+    if (isBegin || isElse || rawCode === "TYPE" || rawCode === "CONST" || rawCode === "VAR") {
+       currentIndent++;
+    }
+    
+    // Structure ends with END, handled above
   });
 
   return {
@@ -336,7 +372,7 @@ function translateStatement(
   typeMap: Record<string, string>,
   variables: Variable[],
   warnings: string[]
-): string | null {
+): string | string[] | null {
   line = line.replace(/;$/, "").trim();
 
   // Skip return 0
@@ -376,7 +412,8 @@ function translateStatement(
   if (line.startsWith("if")) {
     const condMatch = line.match(/if\s*\((.+)\)\s*{?/);
     if (condMatch) {
-      return `IF (${translateExpression(condMatch[1])}) THEN`;
+      const condition = `IF (${translateExpression(condMatch[1])}) THEN`;
+      return line.endsWith("{") ? [condition, "BEGIN"] : condition;
     }
   }
 
@@ -384,20 +421,22 @@ function translateStatement(
   if (line.match(/}\s*else\s+if/)) {
     const condMatch = line.match(/else\s+if\s*\((.+)\)\s*{?/);
     if (condMatch) {
-      return `ELSE IF (${translateExpression(condMatch[1])}) THEN`;
+      const condition = `ELSE IF (${translateExpression(condMatch[1])}) THEN`;
+      return line.endsWith("{") ? ["END", condition, "BEGIN"] : ["END", condition];
     }
   }
 
   // else
   if (line.match(/}\s*else\s*{?/) || line === "else" || line === "else {") {
-    return "ELSE";
+    return line.includes("}") ? (line.endsWith("{") ? ["END", "ELSE", "BEGIN"] : ["END", "ELSE"]) : (line.endsWith("{") ? ["ELSE", "BEGIN"] : "ELSE");
   }
 
   // while loop
   if (line.startsWith("while")) {
     const condMatch = line.match(/while\s*\((.+)\)\s*{?/);
     if (condMatch) {
-      return `WHILE (${translateExpression(condMatch[1])}) DO`;
+      const condition = `WHILE (${translateExpression(condMatch[1])}) DO`;
+      return line.endsWith("{") ? [condition, "BEGIN"] : condition;
     }
   }
 
@@ -411,7 +450,8 @@ function translateStatement(
     const op = forMatch[3];
     let end = translateExpression(forMatch[4]);
     if (op === "<") end = `${end} - 1`;
-    return `FOR ${varName} <- ${start} TO ${end} DO`;
+    const loopStr = `FOR ${varName} <- ${start} TO ${end} DO`;
+    return line.endsWith("{") ? [loopStr, "BEGIN"] : loopStr;
   }
 
   // for loop with step (i += step)
@@ -425,7 +465,8 @@ function translateStatement(
     let end = translateExpression(forStepMatch[4]);
     const step = forStepMatch[5];
     if (op === "<") end = `${end} - 1`;
-    return `FOR ${varName} <- ${start} TO ${end} STEP ${step} DO`;
+    const loopStepStr = `FOR ${varName} <- ${start} TO ${end} STEP ${step} DO`;
+    return line.endsWith("{") ? [loopStepStr, "BEGIN"] : loopStepStr;
   }
 
   // do-while (start)
@@ -436,7 +477,7 @@ function translateStatement(
   // do-while (end with condition)
   const doWhileMatch = line.match(/}\s*while\s*\((.+)\)\s*;?/);
   if (doWhileMatch) {
-    return `WHILE (${translateExpression(doWhileMatch[1])})`;
+    return ["END", `UNTIL (${translateExpression(doWhileMatch[1])})`];
   }
 
   // switch statement
@@ -461,9 +502,9 @@ function translateStatement(
     return null;
   }
 
-  // Closing brace - skip (handled by brace tracking)
+  // Closing brace - replace with END block (handled by brace tracking too, but emit END)
   if (line === "}") {
-    return null;
+    return "END";
   }
 
   // return statement
@@ -596,7 +637,7 @@ function generateAlgoFunction(
   result.push({ code: "BEGIN", cLine: -1 });
   
   for (const stmt of body) {
-    result.push({ code: "    " + stmt.code, cLine: stmt.cLine });
+    result.push({ code: stmt.code, cLine: stmt.cLine });
   }
   result.push({ code: "END", cLine: endLine });
 
