@@ -275,7 +275,7 @@ export function TitleBar({
 
   return (
     <div
-      className="h-8 flex flex-shrink-0 items-center px-2 select-none w-full overflow-x-auto overflow-y-hidden whitespace-nowrap scrollbar-hide"
+      className="h-8 flex shrink-0 items-center px-2 select-none w-full overflow-x-auto overflow-y-hidden whitespace-nowrap scrollbar-hide"
       style={{
         backgroundColor: theme.ui.backgroundDark,
         borderBottom: `1px solid ${theme.ui.border}`,
